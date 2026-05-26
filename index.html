@@ -1,227 +1,30 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Truck + Trailer Weight Calculator</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, sans-serif; margin: 0; background: #f6f7f9; color: #111; }
-    .diagramSticky { position: sticky; top: 0; z-index: 20; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.12); height: min(25vh, 460px); padding: .6rem 1rem; }
-    .diagramSticky h2 { margin: 0 0 .4rem; font-size: 1rem; }
-    .twoCharts { display: grid; grid-template-columns: 1fr; gap: .5rem; height: calc(100% - 1.7rem); }
-    .twoCharts svg { width: 100%; height: 100%; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 1rem; }
-    h1 { font-size: 1.3rem; margin: .25rem 0 .9rem; }
-    .grid { display: grid; gap: .8rem; grid-template-columns: repeat(12, 1fr); }
-    .card { background: #fff; border-radius: 12px; padding: .9rem; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
-    .full { grid-column: 1 / -1; }
-    .half { grid-column: span 6; }
-    label { display: block; font-size: .83rem; margin-bottom: .15rem; font-weight: 600; }
-    input, button { width: 100%; box-sizing: border-box; padding: .45rem .55rem; border: 1px solid #c9ced6; border-radius: 8px; }
-    input[type="range"] { padding: 0; }
-    .sliderVal { font-size: .8rem; color: #374151; margin-top: .12rem; }
-    .row { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: .6rem; }
-    .ok { color: #146c2e; }
-    .bad { color: #b20f0f; }
-    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
-    th, td { text-align: left; padding: .4rem; border-bottom: 1px solid #e9edf2; }
-    .saveRow { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: center; }
-    .saveRow a { word-break: break-all; overflow-wrap: anywhere; }
-    .warn { margin-top: .5rem; padding: .5rem; border-left: 4px solid #eab308; background: #fffbeb; font-size: .85rem; }
-    @media (max-width: 760px) { .half, .row, .saveRow { grid-column: 1 / -1; grid-template-columns: 1fr; } .diagramSticky { height: 40vh; } }
-  </style>
-</head>
-<body>
-  <section class="diagramSticky">
-    <h2>GCWR / GVWR Views</h2>
-    <div class="twoCharts">
-      <svg viewBox="0 0 1000 140" preserveAspectRatio="none" id="chartCapacity" aria-label="capacity graph"></svg>
-      <svg viewBox="0 0 1000 140" preserveAspectRatio="none" id="chartEstimated" aria-label="estimated payload graph"></svg>
-      <svg viewBox="0 0 1000 140" preserveAspectRatio="none" id="chartMeasured" aria-label="measured graph"></svg>
-    </div>
-  </section>
-
-  <main class="wrap">
-    <h1>Truck + RV Trailer Weight Distribution Calculator</h1>
-    <div class="grid">
-      <section class="card half"><h2>Truck Inputs</h2><div class="row">
-        <div><label for="truckGvwr">Truck GVWR (lb)</label><input type="number" id="truckGvwr" value="7200"></div>
-        <div><label for="gcwr">Truck GCWR (lb)</label><input type="number" id="gcwr" value="15000"></div>
-        <div><label for="truckPayloadCap">Truck Payload Capacity (lb)</label><input type="number" id="truckPayloadCap" value="1400"></div>
-        <div><label for="truckCargo">Passengers + Truck Cargo (lb)</label><input type="number" id="truckCargo" value="650"></div>
-      </div>
-      <h3>Measured Weights</h3>
-      <div class="row">
-        <div><label for="emptyFront">Empty Truck Front Axle (lb)</label><input type="number" id="emptyFront" value=""></div>
-        <div><label for="emptyRear">Empty Truck Rear Axle (lb)</label><input type="number" id="emptyRear" value=""></div>
-        <div><label for="noWdhFront">Truck Front Axle w/o WDH (lb)</label><input type="number" id="noWdhFront" value=""></div>
-        <div><label for="noWdhRear">Truck Rear Axle w/o WDH (lb)</label><input type="number" id="noWdhRear" value=""></div>
-        <div><label for="noWdhTrailer">Trailer Axles w/o WDH (lb)</label><input type="number" id="noWdhTrailer" value=""></div>
-        <div><label for="withWdhFront">Truck Front Axle with WDH (lb)</label><input type="number" id="withWdhFront" value=""></div>
-        <div><label for="withWdhRear">Truck Rear Axle with WDH (lb)</label><input type="number" id="withWdhRear" value=""></div>
-        <div><label for="withWdhTrailer">Trailer Axles with WDH (lb)</label><input type="number" id="withWdhTrailer" value=""></div>
-      </div>
-      </section>
-
-      <section class="card half"><h2>Trailer Inputs</h2><div class="row">
-        <div><label for="trailerDry">Dry Weight (lb)</label><input type="number" id="trailerDry" value="6300"></div>
-        <div><label for="trailerGvwr">Trailer GVWR (lb)</label><input type="number" id="trailerGvwr" value="8000"></div>
-        <div><label for="waterGal">Water (gal)</label><input type="number" id="waterGal" value="30"></div>
-        <div><label for="batteryLbs">Batteries (lb)</label><input type="number" id="batteryLbs" value="50"></div>
-        <div><label for="gearLbs">Gear (lb)</label><input type="number" id="gearLbs" value="250"></div>
-        <div><label for="detachedHitch">Measured Detached Hitch Weight (lb)</label><input type="number" id="detachedHitch" value="820"></div>
-      </div>
-      <h3>Cargo Sliders</h3>
-      <div class="row">
-        <div><label for="waterSlider">Water Slider (gal)</label><input type="range" id="waterSlider" min="0" max="100" step="1" value="30"><div class="sliderVal" id="waterSliderVal"></div></div>
-        <div><label for="waterTankSize">Water Tank Size (gal)</label><input type="number" id="waterTankSize" value="100"></div>
-        <div><label for="batterySlider">Battery Slider (lb)</label><input type="range" id="batterySlider" min="0" max="200" step="5" value="50"><div class="sliderVal" id="batterySliderVal"></div></div>
-        <div><label for="gearSlider">Gear Slider (lb)</label><input type="range" id="gearSlider" min="0" max="1500" step="10" value="250"><div class="sliderVal" id="gearSliderVal"></div></div>
-      </div>
-      </section>
-
-      <section class="card full"><h2>Optional Axle / Tire Limits</h2><div class="row">
-        <div><label for="fawr">Truck Front Axle Rating FAWR (lb)</label><input type="number" id="fawr" value=""></div>
-        <div><label for="rawr">Truck Rear Axle Rating RAWR (lb)</label><input type="number" id="rawr" value=""></div>
-        <div><label for="frontTireCap">Front Tire Pair Capacity (lb)</label><input type="number" id="frontTireCap" value=""></div>
-        <div><label for="rearTireCap">Rear Tire Pair Capacity (lb)</label><input type="number" id="rearTireCap" value=""></div>
-      </div></section>
-
-      <section class="card full">
-        <h2>Results</h2>
-        <table id="resultsTable"></table>
-        <div id="warnings" class="warn" hidden></div>
-        <div class="saveRow"><a id="saveLink" href="#">(save/share link)</a><button id="copyBtn" type="button">Copy Link</button></div>
-      </section>
-    </div>
-  </main>
-
+<!doctype html><html lang='en'><head><meta charset='UTF-8'/><meta name='viewport' content='width=device-width, initial-scale=1'/><title>Truck + Trailer Weight Calculator</title>
+<style>:root{color-scheme:light dark}body{font-family:system-ui,sans-serif;margin:0;background:#f6f7f9}.wrap{max-width:1100px;margin:0 auto;padding:1rem}.grid{display:grid;gap:.8rem;grid-template-columns:repeat(12,1fr)}.card{background:#fff;border-radius:12px;padding:.9rem;box-shadow:0 1px 4px rgba(0,0,0,.08)}.full{grid-column:1/-1}.half{grid-column:span 6}label{display:block;font-size:.83rem;font-weight:600}input,button{width:100%;box-sizing:border-box;padding:.45rem .55rem;border:1px solid #c9ced6;border-radius:8px}input[type=range],input[type=checkbox]{width:auto}.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}.saveRow{display:grid;grid-template-columns:1fr auto;gap:.5rem;align-items:center}.saveRow a{word-break:break-all;overflow-wrap:anywhere}.graphsBottom{position:sticky;bottom:0;z-index:20;background:#fff;border-top:1px solid #d1d5db}.graphsInner{max-height:42vh;overflow:auto}.graphToggles{display:flex;flex-wrap:wrap;gap:.8rem;font-size:.85rem}.chart{margin:.35rem 0}.chart svg{width:100%;height:96px;border:1px solid #e5e7eb;border-radius:8px;background:#fff}@media(max-width:760px){.half,.row,.saveRow{grid-column:1/-1;grid-template-columns:1fr}}</style></head><body>
+<main class='wrap'><h1>Truck + RV Trailer Weight Distribution Calculator</h1><div class='grid'>
+<section class='card half'><h2>Truck Inputs</h2><div class='row'>
+<div><label for='truckGvwr'>Truck GVWR (lb)</label><input type='number' id='truckGvwr' value='7200'></div><div><label for='gcwr'>Truck GCWR (lb)</label><input type='number' id='gcwr' value='15000'></div><div><label for='truckPayloadCap'>Truck Payload Capacity (lb)</label><input type='number' id='truckPayloadCap' value='1400'></div><div><label for='truckCargo'>Passengers + Truck Cargo (lb)</label><input type='number' id='truckCargo' value='650'></div></div>
+<h3>Measured Weights</h3><div class='row'>
+<div><label for='emptyFront'>Empty Truck Front Axle (lb)</label><input type='number' id='emptyFront' value=''></div><div><label for='emptyRear'>Empty Truck Rear Axle (lb)</label><input type='number' id='emptyRear' value=''></div><div><label for='noWdhFront'>Truck Front Axle w/o WDH (lb)</label><input type='number' id='noWdhFront' value=''></div><div><label for='noWdhRear'>Truck Rear Axle w/o WDH (lb)</label><input type='number' id='noWdhRear' value=''></div><div><label for='noWdhTrailer'>Trailer Axles w/o WDH (lb)</label><input type='number' id='noWdhTrailer' value=''></div><div><label for='withWdhFront'>Truck Front Axle with WDH (lb)</label><input type='number' id='withWdhFront' value=''></div><div><label for='withWdhRear'>Truck Rear Axle with WDH (lb)</label><input type='number' id='withWdhRear' value=''></div><div><label for='withWdhTrailer'>Trailer Axles with WDH (lb)</label><input type='number' id='withWdhTrailer' value=''></div></div></section>
+<section class='card half'><h2>Trailer Inputs</h2><div class='row'><div><label for='trailerDry'>Dry Weight</label><input type='number' id='trailerDry' value='6300'></div><div><label for='trailerGvwr'>Trailer GVWR</label><input type='number' id='trailerGvwr' value='8000'></div><div><label for='waterGal'>Water (gal)</label><input type='number' id='waterGal' value='30'></div><div><label for='batteryLbs'>Batteries (lb)</label><input type='number' id='batteryLbs' value='50'></div><div><label for='gearLbs'>Gear (lb)</label><input type='number' id='gearLbs' value='250'></div><div><label for='detachedHitch'>Measured Detached Hitch (lb)</label><input type='number' id='detachedHitch' value='820'></div></div></section>
+<section class='card full'><div class='saveRow'><a id='saveLink' href='#'></a><button id='copyBtn'>Copy Link</button></div></section></div></main>
+<section class='graphsBottom card full'><details><summary><strong>Graphs</strong> (collapsed/expand)</summary><div class='graphsInner'><div class='graphToggles'>
+<label><input type='checkbox' id='showEstimated' checked> Estimated view</label><label><input type='checkbox' id='showCapacity'> Capacity view</label><label><input type='checkbox' id='showMeasured'> Measured summary</label><label><input type='checkbox' id='showEmpty'> Empty axles</label><label><input type='checkbox' id='showNoWdh'> No WDH axles</label><label><input type='checkbox' id='showWithWdh'> With WDH axles</label><label><input type='checkbox' id='showUnhitched'> Unhitched trailer</label></div>
+<div class='chart' id='boxEstimated'><svg id='chartEstimated' viewBox='0 0 1000 140' preserveAspectRatio='none'></svg></div><div class='chart' id='boxCapacity'><svg id='chartCapacity' viewBox='0 0 1000 140' preserveAspectRatio='none'></svg></div><div class='chart' id='boxMeasured'><svg id='chartMeasured' viewBox='0 0 1000 140' preserveAspectRatio='none'></svg></div><div class='chart' id='boxEmpty'><svg id='chartEmpty' viewBox='0 0 1000 140' preserveAspectRatio='none'></svg></div><div class='chart' id='boxNoWdh'><svg id='chartNoWdh' viewBox='0 0 1000 140' preserveAspectRatio='none'></svg></div><div class='chart' id='boxWithWdh'><svg id='chartWithWdh' viewBox='0 0 1000 140' preserveAspectRatio='none'></svg></div><div class='chart' id='boxUnhitched'><svg id='chartUnhitched' viewBox='0 0 1000 140' preserveAspectRatio='none'></svg></div>
+</div></details></section>
 <script>
-const ids=["truckGvwr","gcwr","truckPayloadCap","truckCargo","emptyFront","emptyRear","noWdhFront","noWdhRear","noWdhTrailer","withWdhFront","withWdhRear","withWdhTrailer","trailerDry","trailerGvwr","waterGal","waterTankSize","batteryLbs","gearLbs","detachedHitch","fawr","rawr","frontTireCap","rearTireCap"];
-const inputs=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]));
-const num=id=>{const v=parseFloat(inputs[id].value);return Number.isFinite(v)?Math.max(0,v):0;};
-const fmt=v=>Math.round(v).toLocaleString();
-const row=(label,value,limit=null)=>{const ok=limit==null||value<=limit;const status=limit==null?"":`<span class="${ok?"ok":"bad"}">${ok?"OK":"Over"}</span>`;const lim=limit==null?"":` / ${fmt(limit)} lb`;return `<tr><th>${label}</th><td>${fmt(value)} lb${lim} ${status}</td></tr>`;};
-
-const sliders=[
-  ["waterSlider","waterGal","waterSliderVal",()=>Math.max(1,num("waterTankSize")||100)," gal"],
-  ["batterySlider","batteryLbs","batterySliderVal",()=>200," lb"],
-  ["gearSlider","gearLbs","gearSliderVal",()=>Math.max(500,Math.ceil((num("trailerGvwr")||10000)*0.3))," lb"]
-];
-
-function syncSliders(){sliders.forEach(([sid,target,valId,maxFn,suffix])=>{const s=document.getElementById(sid),t=inputs[target],l=document.getElementById(valId);s.max=Math.max(1,maxFn());s.value=t.value||0;l.textContent=`${fmt(Number(s.value))}${suffix}`;});}
-function readStateFromURL(){const p=new URLSearchParams(location.hash.replace(/^#/,""));ids.forEach(id=>{if(p.has(id))inputs[id].value=p.get(id);});}
-function writeURL(){const p=new URLSearchParams();ids.forEach(id=>{if(inputs[id].value!=="")p.set(id,inputs[id].value);});const href=`${location.origin}${location.pathname}#${p.toString()}`;saveLink.href=href;saveLink.textContent=href;}
-function segmentOnly(x,y,w,h,color){return `<rect x="${x}" y="${y}" width="${Math.max(0,w)}" height="${h}" fill="${color}"/>`;}
-function label(x,y,t,c="#111"){return `<text x="${x}" y="${y}" font-size="12" fill="${c}">${t}</text>`;}
-
-function render(){
-  syncSliders();
-  const estimatedCargo=num("waterGal")*8.34+num("batteryLbs")+num("gearLbs");
-  const trailerEstimated=num("trailerDry")+estimatedCargo;
-  const availableRvPayload=Math.max(0,num("trailerGvwr")-trailerEstimated);
-  const curbWeight=Math.max(0,num("truckGvwr")-num("truckPayloadCap"));
-  const towingCapacity=Math.max(0,num("gcwr")-num("truckGvwr"));
-  const noWdhTruck=num("noWdhFront")+num("noWdhRear");
-  const withWdhTruck=num("withWdhFront")+num("withWdhRear");
-  const noWdhCombined=noWdhTruck+num("noWdhTrailer");
-  const withWdhCombined=withWdhTruck+num("withWdhTrailer");
-  const shiftFront=num("withWdhFront")-num("noWdhFront");
-  const shiftRear=num("withWdhRear")-num("noWdhRear");
-  const shiftTrailer=num("withWdhTrailer")-num("noWdhTrailer");
-  const hitchPct=trailerEstimated>0?(num("detachedHitch")/trailerEstimated*100):0;
-
-  let html="";
-  html+=row("Derived Truck Curb Weight",curbWeight);
-  html+=row("Derived Truck Towing Capacity",towingCapacity);
-  html+=row("Estimated Cargo Weight Total",estimatedCargo);
-  html+=row("Estimated Trailer Weight (Dry + Cargo)",trailerEstimated,num("trailerGvwr")||null);
-  html+=row("Available RV Payload",availableRvPayload);
-  html+=row("Detached Hitch Weight % of Estimated Trailer",hitchPct,null);
-  html+=row("Combined Measured Without WDH",noWdhCombined,num("gcwr")||null);
-  html+=row("Combined Measured With WDH",withWdhCombined,num("gcwr")||null);
-  html+=row("WDH Shift to Truck Front Axle (+ means added)",shiftFront);
-  html+=row("WDH Shift to Truck Rear Axle",shiftRear);
-  html+=row("WDH Shift to Trailer Axles",shiftTrailer);
-  if(num("fawr")) html+=row("Front Axle Load with WDH",num("withWdhFront"),num("fawr"));
-  if(num("rawr")) html+=row("Rear Axle Load with WDH",num("withWdhRear"),num("rawr"));
-  if(num("frontTireCap")) html+=row("Front Tire Pair Load with WDH",num("withWdhFront"),num("frontTireCap"));
-  if(num("rearTireCap")) html+=row("Rear Tire Pair Load with WDH",num("withWdhRear"),num("rearTireCap"));
-  resultsTable.innerHTML=html;
-
-  const gcwr=Math.max(1,num("gcwr"));
-  const x=20,y=60,w=960,h=26;
-
-  const truckBase=Math.max(0,num("truckGvwr")-num("truckPayloadCap"));
-  const truckUnusedCap=Math.max(0,num("truckPayloadCap")-num("truckCargo"));
-  const trailerUsedEst=Math.min(num("trailerGvwr"),trailerEstimated);
-  const trailerUnusedCap=Math.max(0,num("trailerGvwr")-trailerUsedEst);
-
-  const truckGvwrW=Math.min(w,w*(truckBase/gcwr));
-  const truckPayloadW=Math.min(w-truckGvwrW,w*(num("truckCargo")/gcwr));
-  const truckUnusedW=Math.min(w-truckGvwrW-truckPayloadW,w*(truckUnusedCap/gcwr));
-  const trailerUsedW=Math.min(w-truckGvwrW-truckPayloadW-truckUnusedW,w*(trailerUsedEst/gcwr));
-  const trailerUnusedW=Math.min(w-truckGvwrW-truckPayloadW-truckUnusedW-trailerUsedW,w*(trailerUnusedCap/gcwr));
-  const remW=Math.max(0,w-truckGvwrW-truckPayloadW-truckUnusedW-trailerUsedW-trailerUnusedW);
-
-  chartCapacity.innerHTML =
-    label(20,18,`Capacity View: GVWR/GCWR with independent available payloads`) +
-    label(20,34,`Truck Avail Payload ${fmt(truckUnusedCap)} | Trailer Avail Payload ${fmt(trailerUnusedCap)} | GCWR ${fmt(gcwr)}`) +
-    segmentOnly(x,y,truckGvwrW,h,'#334155') + segmentOnly(x+truckGvwrW,y,truckPayloadW,h,'#2563eb') +
-    segmentOnly(x+truckGvwrW+truckPayloadW,y,truckUnusedW,h,'#0ea5e9') +
-    segmentOnly(x+truckGvwrW+truckPayloadW+truckUnusedW,y,trailerUsedW,h,'#16a34a') +
-    segmentOnly(x+truckGvwrW+truckPayloadW+truckUnusedW+trailerUsedW,y,trailerUnusedW,h,'#84cc16') +
-    segmentOnly(x+truckGvwrW+truckPayloadW+truckUnusedW+trailerUsedW+trailerUnusedW,y,remW,h,'#94a3b8');
-
-  const hitchToTruck=num("detachedHitch");
-  const truckEstPayload=Math.min(num("truckPayloadCap"),num("truckCargo")+hitchToTruck);
-  const truckEstUnused=Math.max(0,num("truckPayloadCap")-truckEstPayload);
-  const trailerEstUsed=Math.min(num("trailerGvwr"),trailerEstimated);
-  const trailerEstUnused=Math.max(0,num("trailerGvwr")-trailerEstUsed);
-
-  const tBaseW=Math.min(w,w*(truckBase/gcwr));
-  const tPayloadW=Math.min(w-tBaseW,w*(truckEstPayload/gcwr));
-  const tUnusedW=Math.min(w-tBaseW-tPayloadW,w*(truckEstUnused/gcwr));
-  const rUsedW=Math.min(w-tBaseW-tPayloadW-tUnusedW,w*(trailerEstUsed/gcwr));
-  const rUnusedW=Math.min(w-tBaseW-tPayloadW-tUnusedW-rUsedW,w*(trailerEstUnused/gcwr));
-  const rem2=Math.max(0,w-tBaseW-tPayloadW-tUnusedW-rUsedW-rUnusedW);
-
-  chartEstimated.innerHTML =
-    label(20,18,`Estimated View: truck payload includes hitch; truck unused follows truck payload`) +
-    label(20,34,`Truck Est Payload ${fmt(truckEstPayload)} | Trailer Est Payload ${fmt(trailerEstUsed)} | GCWR ${fmt(gcwr)}`) +
-    segmentOnly(x,y,tBaseW,h,'#334155') + segmentOnly(x+tBaseW,y,tPayloadW,h,'#2563eb') + segmentOnly(x+tBaseW+tPayloadW,y,tUnusedW,h,'#0ea5e9') +
-    segmentOnly(x+tBaseW+tPayloadW+tUnusedW,y,rUsedW,h,'#16a34a') + segmentOnly(x+tBaseW+tPayloadW+tUnusedW+rUsedW,y,rUnusedW,h,'#84cc16') + segmentOnly(x+tBaseW+tPayloadW+tUnusedW+rUsedW+rUnusedW,y,rem2,h,'#94a3b8');
-
-  const measuredTruck=Math.max(0,withWdhTruck);
-  const measuredTrailer=Math.max(0,num("withWdhTrailer"));
-  const measuredTotal=measuredTruck+measuredTrailer;
-  const mTruckW=Math.min(w,w*(measuredTruck/gcwr));
-  const mTrailerW=Math.min(w-mTruckW,w*(measuredTrailer/gcwr));
-  const mRemain=Math.max(0,w-mTruckW-mTrailerW);
-  chartMeasured.innerHTML =
-    label(20,18,`Measured View: entered axle/trailer weights vs GVWR/GCWR`) +
-    label(20,34,`Measured Combined ${fmt(measuredTotal)} | GCWR ${fmt(gcwr)} | Truck GVWR ${fmt(num("truckGvwr"))} | Trailer GVWR ${fmt(num("trailerGvwr"))}`) +
-    segmentOnly(x,y,mTruckW,h,'#2563eb') + segmentOnly(x+mTruckW,y,mTrailerW,h,'#16a34a') + segmentOnly(x+mTruckW+mTrailerW,y,mRemain,h,'#94a3b8');
-
-  const warnings=[];
-  if(hitchPct<10||hitchPct>15) warnings.push("Detached hitch weight is typically around 10–15% of loaded trailer weight.");
-  if(withWdhCombined>num("gcwr")) warnings.push("Measured with-WDH combined weight exceeds GCWR.");
-  warningsEl.hidden=warnings.length===0; warningsEl.textContent=warnings.join(" ");
-  writeURL();
-}
-
-const saveLink=document.getElementById("saveLink");
-const warningsEl=document.getElementById("warnings");
-const resultsTable=document.getElementById("resultsTable");
-const chartCapacity=document.getElementById("chartCapacity");
-const chartEstimated=document.getElementById("chartEstimated");
-const chartMeasured=document.getElementById("chartMeasured");
-document.getElementById("copyBtn").addEventListener("click",async()=>{try{await navigator.clipboard.writeText(saveLink.href);}catch{}});
-readStateFromURL();
-ids.forEach(id=>inputs[id].addEventListener("input",render));
-sliders.forEach(([sid,target,valId])=>{document.getElementById(sid).addEventListener("input",e=>{inputs[target].value=e.target.value;render();});});
-render();
-</script>
-</body>
-</html>
+const ids=['truckGvwr','gcwr','truckPayloadCap','truckCargo','emptyFront','emptyRear','noWdhFront','noWdhRear','noWdhTrailer','withWdhFront','withWdhRear','withWdhTrailer','trailerDry','trailerGvwr','waterGal','batteryLbs','gearLbs','detachedHitch']; const I=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)])); const num=id=>{const v=parseFloat(I[id].value);return Number.isFinite(v)?Math.max(0,v):0}; const fmt=v=>Math.round(v).toLocaleString();
+const seg=(x,y,w,h,c)=>`<rect x='${x}' y='${y}' width='${Math.max(0,w)}' height='${h}' fill='${c}'/>`; const txt=(x,y,t)=>`<text x='${x}' y='${y}' font-size='12'>${t}</text>`;
+function draw(svg,title,parts){let x=20,y=58,w=960,h=28,s=''; s+=txt(20,14,title); let lx=20; parts.forEach(p=>{let pw=w*(p.v/Math.max(1,num('gcwr'))); s+=txt(lx+2,30,`${p.n}: ${fmt(p.v)}`); s+=seg(x,y,pw,h,p.c); x+=pw; lx+=pw;}); svg.innerHTML=s;}
+function render(){const gcwr=num('gcwr'),truckBase=Math.max(0,num('truckGvwr')-num('truckPayloadCap')), estCargo=num('waterGal')*8.34+num('batteryLbs')+num('gearLbs'),trailerEst=num('trailerDry')+estCargo; const hitch=num('detachedHitch')||trailerEst*0.125;
+const truckAvail=Math.max(0,num('truckPayloadCap')-num('truckCargo')); const trailerAvail=Math.max(0,num('trailerGvwr')-trailerEst);
+draw(chartCapacity,'Capacity view (truck available payload before trailer payload/available)',[{n:'Truck base',v:truckBase,c:'#334155'},{n:'Truck payload',v:num('truckCargo'),c:'#2563eb'},{n:'Truck avail',v:truckAvail,c:'#0ea5e9'},{n:'Trailer payload',v:Math.min(num('trailerGvwr'),trailerEst),c:'#16a34a'},{n:'Trailer avail',v:trailerAvail,c:'#84cc16'}]);
+draw(chartEstimated,'Estimated view (truck includes hitch)',[{n:'Truck base',v:truckBase,c:'#334155'},{n:'Truck est payload',v:Math.min(num('truckPayloadCap'),num('truckCargo')+hitch),c:'#2563eb'},{n:'Truck avail',v:Math.max(0,num('truckPayloadCap')-Math.min(num('truckPayloadCap'),num('truckCargo')+hitch)),c:'#0ea5e9'},{n:'Trailer est payload',v:Math.min(num('trailerGvwr'),trailerEst),c:'#16a34a'},{n:'Trailer avail',v:Math.max(0,num('trailerGvwr')-trailerEst),c:'#84cc16'}]);
+const mt=num('withWdhFront')+num('withWdhRear'),mtr=num('withWdhTrailer'); draw(chartMeasured,'Measured summary', [{n:'Truck measured',v:mt,c:'#2563eb'},{n:'Trailer measured',v:mtr,c:'#16a34a'}]);
+draw(chartEmpty,'Empty truck front/rear', [{n:'Front',v:num('emptyFront'),c:'#1d4ed8'},{n:'Rear',v:num('emptyRear'),c:'#2563eb'}]);
+draw(chartNoWdh,'Without WDH front/rear/trailer', [{n:'Front',v:num('noWdhFront'),c:'#1d4ed8'},{n:'Rear',v:num('noWdhRear'),c:'#2563eb'},{n:'Trailer',v:num('noWdhTrailer'),c:'#16a34a'}]);
+draw(chartWithWdh,'With WDH front/rear/trailer', [{n:'Front',v:num('withWdhFront'),c:'#1d4ed8'},{n:'Rear',v:num('withWdhRear'),c:'#2563eb'},{n:'Trailer',v:num('withWdhTrailer'),c:'#16a34a'}]);
+draw(chartUnhitched,'Unhitched trailer hitch/axle (measured hitch or 12.5% est)', [{n:'Hitch',v:hitch,c:'#f59e0b'},{n:'Axles',v:Math.max(0,trailerEst-hitch),c:'#16a34a'}]);
+[['showEstimated','boxEstimated'],['showCapacity','boxCapacity'],['showMeasured','boxMeasured'],['showEmpty','boxEmpty'],['showNoWdh','boxNoWdh'],['showWithWdh','boxWithWdh'],['showUnhitched','boxUnhitched']].forEach(([c,b])=>document.getElementById(b).style.display=document.getElementById(c).checked?'block':'none');
+const p=new URLSearchParams(); ids.forEach(id=>{if(I[id].value!=='')p.set(id,I[id].value)}); const href=`${location.origin}${location.pathname}#${p.toString()}`; saveLink.href=href; saveLink.textContent=href;}
+ids.forEach(id=>I[id].addEventListener('input',render)); ['showEstimated','showCapacity','showMeasured','showEmpty','showNoWdh','showWithWdh','showUnhitched'].forEach(id=>document.getElementById(id).addEventListener('change',render)); copyBtn.onclick=async()=>{try{await navigator.clipboard.writeText(saveLink.href)}catch{}}; render();
+</script></body></html>
