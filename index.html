@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Truck + Trailer Weight Calculator</title>
+<style>
+body{font-family:system-ui,sans-serif;margin:0;background:#f6f7f9;color:#111}.wrap{max-width:1100px;margin:0 auto;padding:1rem}
+.sticky{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #d9dee7;max-height:25vh;overflow:auto;padding:.5rem 1rem}
+svg{width:100%;height:clamp(120px,22vh,240px)} .grid{display:grid;gap:.8rem;grid-template-columns:repeat(12,1fr)}
+.card{background:#fff;border-radius:12px;padding:.9rem;box-shadow:0 1px 4px rgba(0,0,0,.08)}.half{grid-column:span 6}.third{grid-column:span 4}.full{grid-column:1/-1}
+label{display:block;font-size:.82rem;font-weight:600}input{width:100%;padding:.4rem;border:1px solid #c9ced6;border-radius:8px}.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.6rem}
+.slider{width:100%}table{width:100%;border-collapse:collapse;font-size:.9rem}th,td{padding:.35rem;border-bottom:1px solid #e9edf2;text-align:left}
+@media(max-width:760px){.half,.third{grid-column:1/-1}.row{grid-template-columns:1fr}}
+</style></head><body>
+<section class="sticky"><h3 style="margin:.2rem 0">Live Capacity View (100% bars based on GCWR)</h3><svg id="diagram" viewBox="0 0 1000 240"></svg></section>
+<main class="wrap"><h1>Truck + RV Trailer Weight Distribution Calculator</h1><div class="grid">
+<section class="card half"><h2>Truck</h2><div class="row">
+<div><label>GVWR (lb)</label><input type="number" id="truckGvwr" value="7200"></div>
+<div><label>GCWR (lb)</label><input type="number" id="gcwr" value="15000"></div>
+<div><label>Payload Capacity (lb)</label><input type="number" id="truckPayloadCap" value="1400"></div>
+<div><label>Calculated Curb (GVWR - Payload)</label><input id="truckCurbCalc" readonly></div>
+<div><label>Calculated Tow Capacity (GCWR - GVWR)</label><input id="towCapCalc" readonly></div>
+</div></section>
+<section class="card half"><h2>Trailer</h2><div class="row">
+<div><label>Dry Weight (lb)</label><input type="number" id="trailerDry" value="6300"></div>
+<div><label>GVWR (lb)</label><input type="number" id="trailerGvwr" value="8000"></div>
+<div><label>Water (gal)</label><input type="number" id="waterGal" value="40"></div>
+<div><label>Batteries (lb)</label><input type="number" id="batteryLbs" value="50"></div>
+<div><label>Gear (lb)</label><input type="number" id="gearLbs" value="250"></div>
+<div><label>Measured Detached Hitch (lb)</label><input type="number" id="detachedHitch" value="900"></div>
+</div></section>
+<section class="card full"><h2>Measured Weights</h2><div class="row">
+<div><label>Truck Front (empty)</label><input type="number" id="emptyFront" value="3100"></div><div><label>Truck Rear (empty)</label><input type="number" id="emptyRear" value="2700"></div>
+<div><label>Truck Front (NO WDH)</label><input type="number" id="noWdhFront" value="3000"></div><div><label>Truck Rear (NO WDH)</label><input type="number" id="noWdhRear" value="3800"></div><div><label>Trailer Axles (NO WDH)</label><input type="number" id="noWdhTrailer" value="6200"></div>
+<div><label>Truck Front (WITH WDH)</label><input type="number" id="withWdhFront" value="3120"></div><div><label>Truck Rear (WITH WDH)</label><input type="number" id="withWdhRear" value="3520"></div><div><label>Trailer Axles (WITH WDH)</label><input type="number" id="withWdhTrailer" value="6360"></div>
+</div></section>
+<section class="card full"><h2>Quick Adjust Sliders</h2><div class="row" id="sliders"></div></section>
+<section class="card third"><h2>Optional Axle/Tire Limits</h2><div class="row">
+<div><label>FAWR</label><input type="number" id="fawr"></div><div><label>RAWR</label><input type="number" id="rawr"></div>
+<div><label>Front Tire Pair Capacity</label><input type="number" id="frontTireCap"></div><div><label>Rear Tire Pair Capacity</label><input type="number" id="rearTireCap"></div></div></section>
+<section class="card third"><h2>Results</h2><table id="resultsTable"></table></section>
+<section class="card third"><h2>Share</h2><a id="saveLink" href="#"></a></section>
+</div></main>
+<script>
+const ids=["truckGvwr","gcwr","truckPayloadCap","trailerDry","trailerGvwr","waterGal","batteryLbs","gearLbs","detachedHitch","emptyFront","emptyRear","noWdhFront","noWdhRear","noWdhTrailer","withWdhFront","withWdhRear","withWdhTrailer","fawr","rawr","frontTireCap","rearTireCap"];
+const inputs=Object.fromEntries(ids.map(id=>[id,document.getElementById(id)]));
+const num=id=>Math.max(0,parseFloat(inputs[id].value)||0), fmt=v=>Math.round(v).toLocaleString();
+const row=(l,v,lim=null)=>`<tr><th>${l}</th><td>${fmt(v)} lb${lim?` / ${fmt(lim)} ${v<=lim?'OK':'Over'}`:''}</td></tr>`;
+function read(){const p=new URLSearchParams(location.hash.slice(1));ids.forEach(id=>p.has(id)&&(inputs[id].value=p.get(id)));}
+function write(){const p=new URLSearchParams();ids.forEach(id=>inputs[id].value!==''&&p.set(id,inputs[id].value));const href=`${location.origin}${location.pathname}#${p}`;saveLink.href=href;saveLink.textContent=href;}
+function buildSliders(){
+ const cfg=[['truckPayloadCap','Truck Payload',()=>num('truckGvwr')],['waterGal','Water (gal)',()=>Math.max(0,(num('trailerGvwr')-num('trailerDry'))/8.34)],['batteryLbs','Battery lb',()=>Math.max(0,num('trailerGvwr')-num('trailerDry'))],['gearLbs','Gear lb',()=>Math.max(0,num('trailerGvwr')-num('trailerDry'))]];
+ sliders.innerHTML=cfg.map(([id,label,maxf])=>`<div><label>${label} slider</label><input class="slider" type="range" min="0" max="${Math.max(1,Math.round(maxf()))}" value="${num(id)}" data-id="${id}"><div id="${id}Val">${fmt(num(id))}</div></div>`).join('');
+ sliders.querySelectorAll('input[type=range]').forEach(s=>s.oninput=e=>{const id=e.target.dataset.id;inputs[id].value=e.target.value;render();});
+}
+function render(){
+ const truckCurb=num('truckGvwr')-num('truckPayloadCap'), towCap=num('gcwr')-num('truckGvwr'); truckCurbCalc.value=`${fmt(Math.max(0,truckCurb))} lb`; towCapCalc.value=`${fmt(Math.max(0,towCap))} lb`;
+ const cargo=num('waterGal')*8.34+num('batteryLbs')+num('gearLbs'), trailerLoaded=num('trailerDry')+cargo, avail=num('trailerGvwr')-trailerLoaded;
+ const noTruck=num('noWdhFront')+num('noWdhRear'), withTruck=num('withWdhFront')+num('withWdhRear'), noComb=noTruck+num('noWdhTrailer'), withComb=withTruck+num('withWdhTrailer');
+ const hitch=num('detachedHitch');
+ resultsTable.innerHTML=[row('Estimated Trailer Loaded',trailerLoaded,num('trailerGvwr')),row('Available RV Payload',Math.max(0,avail)),row('Detached Hitch %', trailerLoaded?100*hitch/trailerLoaded:0),row('Combined NO WDH',noComb,num('gcwr')),row('Combined WITH WDH',withComb,num('gcwr'))].join('');
+ const gcwr=Math.max(1,num('gcwr')); const w=900,x=60,y1=45,y2=140,h=28;
+ const seg=(start,val,color,label,y)=>`<rect x="${x+start*w/gcwr}" y="${y}" width="${Math.max(0,val*w/gcwr)}" height="${h}" fill="${color}"/><text x="${x+start*w/gcwr+4}" y="${y+19}" font-size="11" fill="white">${label} ${fmt(val)}</text>`;
+ const truckEst=Math.max(0,truckCurb+num('truckPayloadCap')), trailerEst=Math.max(0,trailerLoaded);
+ diagram.innerHTML=`<text x="60" y="32" font-size="13">Bar 1: Estimated truck + trailer vs GCWR (${fmt(gcwr)} lb = 100%)</text>${seg(0,truckEst,'#2563eb','Truck est',y1)}${seg(truckEst,trailerEst,'#16a34a','Trailer est',y1)}
+ <rect x="${x}" y="${y1}" width="${w}" height="${h}" fill="none" stroke="#222"/>
+ <text x="60" y="127" font-size="13">Bar 2: With-WDH front axle + rear axle + hitch + trailer axles vs GCWR</text>
+ ${seg(0,num('withWdhFront'),'#0ea5e9','Front',y2)}${seg(num('withWdhFront'),num('withWdhRear'),'#f59e0b','Rear',y2)}${seg(num('withWdhFront')+num('withWdhRear'),hitch,'#a855f7','Hitch',y2)}${seg(num('withWdhFront')+num('withWdhRear')+hitch,num('withWdhTrailer'),'#22c55e','Trailer axles',y2)}
+ <rect x="${x}" y="${y2}" width="${w}" height="${h}" fill="none" stroke="#222"/>`;
+ buildSliders(); write();
+}
+const saveLink=document.getElementById('saveLink'); const sliders=document.getElementById('sliders'); read(); ids.forEach(id=>inputs[id].addEventListener('input',render)); render();
+</script></body></html>
