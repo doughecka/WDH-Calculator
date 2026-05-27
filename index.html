@@ -244,23 +244,23 @@
         <div class="row">
           <div>
             <label for="truckGvwr">Truck GVWR (lb)</label>
-            <input type="number" id="truckGvwr" value="7200" />
+            <input type="number" id="truckGvwr" value="7350" />
           </div>
           <div>
             <label for="gcwr">Truck GCWR (lb)</label>
-            <input type="number" id="gcwr" value="15000" />
+            <input type="number" id="gcwr" value="18400" />
           </div>
           <div>
             <label for="truckPayloadCap">Truck Payload Capacity (lb)</label>
-            <input type="number" id="truckPayloadCap" value="1400" />
+            <input type="number" id="truckPayloadCap" value="1563" />
           </div>
           <div>
             <label for="trailerDry">Trailer Dry Weight (lb)</label>
-            <input type="number" id="trailerDry" value="6300" />
+            <input type="number" id="trailerDry" value="6940" />
           </div>
           <div>
             <label for="trailerGvwr">Trailer GVWR (lb)</label>
-            <input type="number" id="trailerGvwr" value="8000" />
+            <input type="number" id="trailerGvwr" value="9290" />
           </div>
           <div>
             <label for="waterTankGal">Water Tank Size (gal)</label>
@@ -271,11 +271,11 @@
         <div class="row">
           <div>
             <label for="emptyFront">Empty Truck Front Axle (lb)</label>
-            <input type="number" id="emptyFront" />
+            <input type="number" id="emptyFront" value="3620" />
           </div>
           <div>
             <label for="emptyRear">Empty Truck Rear Axle (lb)</label>
-            <input type="number" id="emptyRear" />
+            <input type="number" id="emptyRear" value="2640" />
           </div>
           <div>
             <label for="noWdhFront">Truck Front Axle w/o WDH (lb)</label>
@@ -309,11 +309,11 @@
         <div class="row">
           <div>
             <label for="truckCargo">Passengers + Truck Cargo (lb)</label>
-            <input type="number" id="truckCargo" value="650" />
+            <input type="number" id="truckCargo" value="0" />
           </div>
           <div>
             <label for="waterGal">Water (gal)</label>
-            <input type="number" id="waterGal" value="30" />
+            <input type="number" id="waterGal" value="5" />
           </div>
           <div>
             <label for="batteryLbs">Batteries (lb)</label>
@@ -321,7 +321,7 @@
           </div>
           <div>
             <label for="gearLbs">Gear (lb)</label>
-            <input type="number" id="gearLbs" value="250" />
+            <input type="number" id="gearLbs" value="240" />
           </div>
           <div>
             <label for="detachedHitch">Measured Detached Hitch Weight (lb)</label>
@@ -332,12 +332,12 @@
         <div class="row">
           <div>
             <label for="truckCargoSlider">Truck Cargo Slider</label>
-            <input type="range" id="truckCargoSlider" min="0" max="1400" step="10" value="650" />
+            <input type="range" id="truckCargoSlider" min="0" max="1400" step="10" value="0" />
             <div class="sliderVal" id="truckCargoSliderVal"></div>
           </div>
           <div>
             <label for="waterSlider">Water Slider (gal)</label>
-            <input type="range" id="waterSlider" min="0" max="100" step="1" value="30" />
+            <input type="range" id="waterSlider" min="0" max="100" step="1" value="5" />
             <div class="sliderVal" id="waterSliderVal"></div>
           </div>
           <div>
@@ -347,7 +347,7 @@
           </div>
           <div>
             <label for="gearSlider">Gear Slider (lb)</label>
-            <input type="range" id="gearSlider" min="0" max="1500" step="10" value="250" />
+            <input type="range" id="gearSlider" min="0" max="1500" step="10" value="240" />
             <div class="sliderVal" id="gearSliderVal"></div>
           </div>
           <div>
@@ -469,13 +469,19 @@
     const estimatedTrailerWeight = () => num("trailerDry") + estimatedTrailerCargo();
     const estimatedHitchRatio = () => Math.min(15, Math.max(10, num("hitchRatio") || 12.5));
     const estimatedHitchWeight = () => estimatedTrailerWeight() * (estimatedHitchRatio() / 100);
+    const hasMeasuredEmptyTruckWeight = () => num("emptyFront") > 0 && num("emptyRear") > 0;
+    const measuredTruckEmptyWeight = () => num("emptyFront") + num("emptyRear");
+    const effectiveTruckCurbWeight = () =>
+      hasMeasuredEmptyTruckWeight() ? measuredTruckEmptyWeight() : Math.max(0, num("truckGvwr") - num("truckPayloadCap"));
+    const effectiveTruckPayloadCapacity = () =>
+      hasMeasuredEmptyTruckWeight() ? Math.max(0, num("truckGvwr") - measuredTruckEmptyWeight()) : num("truckPayloadCap");
 
     const sliders = [
       [
         "truckCargoSlider",
         "truckCargo",
         "truckCargoSliderVal",
-        () => Math.floor(Math.max(0, num("truckGvwr") - Math.max(0, num("truckGvwr") - num("truckPayloadCap")) - estimatedHitchWeight())),
+        () => Math.floor(Math.max(0, effectiveTruckPayloadCapacity() - estimatedHitchWeight())),
         " lb",
       ],
       ["waterSlider", "waterGal", "waterSliderVal", () => num("waterTankGal"), " gal"],
@@ -568,7 +574,8 @@
       const estimatedCargo = estimatedTrailerCargo();
       const trailerEstimated = estimatedTrailerWeight();
       const availableRvPayload = Math.max(0, num("trailerGvwr") - trailerEstimated);
-      const curbWeight = Math.max(0, num("truckGvwr") - num("truckPayloadCap"));
+      const curbWeight = effectiveTruckCurbWeight();
+      const truckPayloadLimit = effectiveTruckPayloadCapacity();
       const towingCapacity = Math.max(0, num("gcwr") - num("truckGvwr"));
 
       const noWdhTruck = num("noWdhFront") + num("noWdhRear");
@@ -584,6 +591,7 @@
 
       let html = "";
       html += row("Derived Truck Curb Weight", curbWeight);
+      html += row("Effective Truck Payload Capacity", truckPayloadLimit, num("truckPayloadCap") || null);
       html += row("Derived Truck Towing Capacity", towingCapacity);
       html += row("Estimated Cargo Weight Total", estimatedCargo);
       html += row("Estimated Trailer Weight (Dry + Cargo)", trailerEstimated, num("trailerGvwr") || null);
@@ -602,10 +610,11 @@
       resultsTable.innerHTML = html;
 
       const truckBase = curbWeight;
-      const truckAvail = Math.max(0, num("truckPayloadCap") - num("truckCargo"));
+      const truckAvail = Math.max(0, truckPayloadLimit - num("truckCargo"));
       const trailAvail = availableRvPayload;
       const estimatedHitch = estimatedHitchWeight();
       const truckEst = num("truckCargo") + estimatedHitch;
+      const truckEstAvail = Math.max(0, truckPayloadLimit - truckEst);
 
       draw(chartCapacity, "Capacity (truck available before trailer)", [
         { n: "Truck base", v: truckBase, c: "#475569" },
@@ -619,7 +628,7 @@
         { n: "Truck base", v: truckBase, c: "#475569" },
         { n: "Truck cargo", v: num("truckCargo"), c: "#2563eb" },
         { n: "Est hitch", v: estimatedHitch, c: "#7c3aed" },
-        { n: "Truck avail", v: Math.max(0, num("truckPayloadCap") - truckEst), c: "#0ea5e9" },
+        { n: "Truck avail", v: truckEstAvail, c: "#0ea5e9" },
         { n: "Trailer est payload", v: Math.min(num("trailerGvwr"), trailerEstimated), c: "#16a34a" },
         { n: "Trailer avail", v: trailAvail, c: "#84cc16" },
       ]);
@@ -629,9 +638,13 @@
         { n: "Trailer measured", v: num("withWdhTrailer"), c: "#16a34a" },
       ]);
 
-      draw(chartEmpty, "Empty truck axles", [
+      draw(chartEmpty, "Empty truck axles + estimated payloads", [
         { n: "Front", v: num("emptyFront"), c: "#1d4ed8" },
         { n: "Rear", v: num("emptyRear"), c: "#2563eb" },
+        { n: "Truck est payload", v: truckEst, c: "#7c3aed" },
+        { n: "Truck avail", v: truckEstAvail, c: "#0ea5e9" },
+        { n: "Trailer est payload", v: Math.min(num("trailerGvwr"), trailerEstimated), c: "#16a34a" },
+        { n: "Trailer avail", v: trailAvail, c: "#84cc16" },
       ]);
 
       draw(chartNoWdh, "Without WDH", [
