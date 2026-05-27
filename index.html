@@ -462,9 +462,18 @@
       const lim = limit == null ? "" : ` / ${fmt(limit)} lb`;
       return `<tr><th>${label}</th><td>${fmt(value)} lb${lim} ${status}</td></tr>`;
     };
+    const estimatedTrailerCargo = () => num("waterGal") * 8.34 + num("batteryLbs") + num("gearLbs");
+    const estimatedTrailerWeight = () => num("trailerDry") + estimatedTrailerCargo();
+    const estimatedHitchWeight = () => estimatedTrailerWeight() * 0.125;
 
     const sliders = [
-      ["truckCargoSlider", "truckCargo", "truckCargoSliderVal", () => num("truckPayloadCap") || 2000, " lb"],
+      [
+        "truckCargoSlider",
+        "truckCargo",
+        "truckCargoSliderVal",
+        () => Math.floor(Math.max(0, num("truckGvwr") - Math.max(0, num("truckGvwr") - num("truckPayloadCap")) - estimatedHitchWeight())),
+        " lb",
+      ],
       ["waterSlider", "waterGal", "waterSliderVal", () => num("waterTankGal"), " gal"],
       ["batterySlider", "batteryLbs", "batterySliderVal", () => 200, " lb"],
       [
@@ -482,6 +491,9 @@
           t = inputs[target],
           l = document.getElementById(valId);
         s.max = Math.max(0, Number(maxFn()) || 0);
+        if (sid === "truckCargoSlider" && num(target) > Number(s.max)) {
+          t.value = s.max;
+        }
         s.value = t.value || 0;
         l.textContent = `${fmt(Number(s.value))}${suffix}`;
       });
@@ -536,8 +548,8 @@
 
     function render() {
       syncSliders();
-      const estimatedCargo = num("waterGal") * 8.34 + num("batteryLbs") + num("gearLbs");
-      const trailerEstimated = num("trailerDry") + estimatedCargo;
+      const estimatedCargo = estimatedTrailerCargo();
+      const trailerEstimated = estimatedTrailerWeight();
       const availableRvPayload = Math.max(0, num("trailerGvwr") - trailerEstimated);
       const curbWeight = Math.max(0, num("truckGvwr") - num("truckPayloadCap"));
       const towingCapacity = Math.max(0, num("gcwr") - num("truckGvwr"));
@@ -559,6 +571,7 @@
       html += row("Estimated Cargo Weight Total", estimatedCargo);
       html += row("Estimated Trailer Weight (Dry + Cargo)", trailerEstimated, num("trailerGvwr") || null);
       html += row("Available RV Payload", availableRvPayload);
+      html += row("Estimated Hitch Weight (12.5%)", trailerEstimated * 0.125);
       html += row("Detached Hitch Weight % of Estimated Trailer", hitchPct, null);
       html += row("Combined Measured Without WDH", noWdhCombined, num("gcwr") || null);
       html += row("Combined Measured With WDH", withWdhCombined, num("gcwr") || null);
@@ -574,8 +587,8 @@
       const truckBase = curbWeight;
       const truckAvail = Math.max(0, num("truckPayloadCap") - num("truckCargo"));
       const trailAvail = availableRvPayload;
-      const truckEst = Math.min(num("truckPayloadCap"), num("truckCargo") + num("detachedHitch"));
-      const hitch = num("detachedHitch") || trailerEstimated * 0.125;
+      const estimatedHitch = estimatedHitchWeight();
+      const truckEst = num("truckCargo") + estimatedHitch;
 
       draw(chartCapacity, "Capacity (truck available before trailer)", [
         { n: "Truck base", v: truckBase, c: "#475569" },
@@ -587,7 +600,8 @@
 
       draw(chartEstimated, "Estimated (truck includes hitch)", [
         { n: "Truck base", v: truckBase, c: "#475569" },
-        { n: "Truck est payload", v: truckEst, c: "#2563eb" },
+        { n: "Truck cargo", v: num("truckCargo"), c: "#2563eb" },
+        { n: "Est hitch", v: estimatedHitch, c: "#7c3aed" },
         { n: "Truck avail", v: Math.max(0, num("truckPayloadCap") - truckEst), c: "#0ea5e9" },
         { n: "Trailer est payload", v: Math.min(num("trailerGvwr"), trailerEstimated), c: "#16a34a" },
         { n: "Trailer avail", v: trailAvail, c: "#84cc16" },
