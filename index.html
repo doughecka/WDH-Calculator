@@ -263,35 +263,35 @@
         <div class="row">
           <div>
             <label for="emptyFront">Empty Truck Front Axle (lb)</label>
-            <input type="number" id="emptyFront" value="3100" />
+            <input type="number" id="emptyFront" />
           </div>
           <div>
             <label for="emptyRear">Empty Truck Rear Axle (lb)</label>
-            <input type="number" id="emptyRear" value="2700" />
+            <input type="number" id="emptyRear" />
           </div>
           <div>
             <label for="noWdhFront">Truck Front Axle w/o WDH (lb)</label>
-            <input type="number" id="noWdhFront" value="2950" />
+            <input type="number" id="noWdhFront" />
           </div>
           <div>
             <label for="noWdhRear">Truck Rear Axle w/o WDH (lb)</label>
-            <input type="number" id="noWdhRear" value="3850" />
+            <input type="number" id="noWdhRear" />
           </div>
           <div>
             <label for="noWdhTrailer">Trailer Axles w/o WDH (lb)</label>
-            <input type="number" id="noWdhTrailer" value="6250" />
+            <input type="number" id="noWdhTrailer" />
           </div>
           <div>
             <label for="withWdhFront">Truck Front Axle with WDH (lb)</label>
-            <input type="number" id="withWdhFront" value="3080" />
+            <input type="number" id="withWdhFront" />
           </div>
           <div>
             <label for="withWdhRear">Truck Rear Axle with WDH (lb)</label>
-            <input type="number" id="withWdhRear" value="3630" />
+            <input type="number" id="withWdhRear" />
           </div>
           <div>
             <label for="withWdhTrailer">Trailer Axles with WDH (lb)</label>
-            <input type="number" id="withWdhTrailer" value="6340" />
+            <input type="number" id="withWdhTrailer" />
           </div>
         </div>
         <h3>Adjustment Sliders</h3>
@@ -316,6 +316,10 @@
             <input type="number" id="trailerGvwr" value="8000" />
           </div>
           <div>
+            <label for="waterTankGal">Water Tank Size (gal)</label>
+            <input type="number" id="waterTankGal" value="30" />
+          </div>
+          <div>
             <label for="waterGal">Water (gal)</label>
             <input type="number" id="waterGal" value="30" />
           </div>
@@ -329,7 +333,7 @@
           </div>
           <div>
             <label for="detachedHitch">Measured Detached Hitch Weight (lb)</label>
-            <input type="number" id="detachedHitch" value="820" />
+            <input type="number" id="detachedHitch" />
           </div>
         </div>
         <h3>Cargo Sliders</h3>
@@ -436,6 +440,7 @@
       "withWdhTrailer",
       "trailerDry",
       "trailerGvwr",
+      "waterTankGal",
       "waterGal",
       "batteryLbs",
       "gearLbs",
@@ -460,9 +465,15 @@
 
     const sliders = [
       ["truckCargoSlider", "truckCargo", "truckCargoSliderVal", () => num("truckPayloadCap") || 2000, " lb"],
-      ["waterSlider", "waterGal", "waterSliderVal", () => Math.ceil((num("trailerGvwr") || 10000) / 8.34), " gal"],
-      ["batterySlider", "batteryLbs", "batterySliderVal", () => Math.max(100, Math.ceil((num("trailerGvwr") || 10000) * 0.1)), " lb"],
-      ["gearSlider", "gearLbs", "gearSliderVal", () => Math.max(500, Math.ceil((num("trailerGvwr") || 10000) * 0.3)), " lb"],
+      ["waterSlider", "waterGal", "waterSliderVal", () => num("waterTankGal"), " gal"],
+      ["batterySlider", "batteryLbs", "batterySliderVal", () => 200, " lb"],
+      [
+        "gearSlider",
+        "gearLbs",
+        "gearSliderVal",
+        () => Math.max(0, num("trailerGvwr") - num("trailerDry") - num("waterGal") * 8.34 - num("batteryLbs")),
+        " lb",
+      ],
     ];
 
     function syncSliders() {
@@ -470,7 +481,7 @@
         const s = document.getElementById(sid),
           t = inputs[target],
           l = document.getElementById(valId);
-        s.max = Math.max(1, maxFn());
+        s.max = Math.max(0, Number(maxFn()) || 0);
         s.value = t.value || 0;
         l.textContent = `${fmt(Number(s.value))}${suffix}`;
       });
@@ -620,7 +631,7 @@
       });
 
       const warnings = [];
-      if (hitchPct < 10 || hitchPct > 15)
+      if (num("detachedHitch") && (hitchPct < 10 || hitchPct > 15))
         warnings.push("Detached hitch weight is typically around 10–15% of loaded trailer weight.");
       if (withWdhCombined > num("gcwr"))
         warnings.push("Measured with-WDH combined weight exceeds GCWR.");
