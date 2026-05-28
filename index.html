@@ -647,15 +647,19 @@
         { n: "Trailer avail", v: trailAvail, c: "#84cc16" },
       ]);
 
+      const noWdhTruckAvail = Math.max(0, num("truckGvwr") - (num("noWdhFront") + num("noWdhRear")));
       draw(chartNoWdh, "Without WDH", [
         { n: "Front", v: num("noWdhFront"), c: "#1d4ed8" },
         { n: "Rear", v: num("noWdhRear"), c: "#2563eb" },
+        { n: "Truck avail", v: noWdhTruckAvail, c: "#0ea5e9" },
         { n: "Trailer", v: num("noWdhTrailer"), c: "#16a34a" },
       ]);
 
+      const withWdhTruckAvail = Math.max(0, num("truckGvwr") - (num("withWdhFront") + num("withWdhRear")));
       draw(chartWithWdh, "With WDH", [
         { n: "Front", v: num("withWdhFront"), c: "#1d4ed8" },
         { n: "Rear", v: num("withWdhRear"), c: "#2563eb" },
+        { n: "Truck avail", v: withWdhTruckAvail, c: "#0ea5e9" },
         { n: "Trailer", v: num("withWdhTrailer"), c: "#16a34a" },
       ]);
 
